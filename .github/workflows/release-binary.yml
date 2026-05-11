@@ -1,0 +1,90 @@
+name: release-binary
+run-name: "release linux-arm64 binary ${{ github.ref_name }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g., v4.0.0). Leave blank to use latest git tag."
+        required: false
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+        env:
+          BUN_INSTALL_ALLOW_SCRIPTS: "@ast-grep/napi"
+
+      - name: Build linux-arm64 binary
+        run: |
+          mkdir -p packages/linux-arm64/bin
+          bun build src/cli/index.ts \
+            --compile \
+            --minify \
+            --target=bun-linux-arm64 \
+            --outfile=packages/linux-arm64/bin/oh-my-opencode
+          echo "Built binary:"
+          ls -lh packages/linux-arm64/bin/oh-my-opencode
+
+      - name: Package binary
+        run: |
+          cd packages/linux-arm64
+          tar -czvf ../../oh-my-opencode-linux-arm64.tar.gz bin/oh-my-opencode package.json
+          cd ../..
+          echo "Package:"
+          ls -lh oh-my-opencode-linux-arm64.tar.gz
+
+      - name: Determine release tag
+        id: tag
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Release tag: $TAG"
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Uploading to existing release $TAG"
+            gh release upload "$TAG" oh-my-opencode-linux-arm64.tar.gz --clobber
+          else
+            echo "Creating release $TAG"
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --notes "Linux ARM64 binary release. See [install.sh](https://github.com/${{ github.repository }}/raw/$TAG/install.sh) for easy installation." \
+              oh-my-opencode-linux-arm64.tar.gz
+          fi
+
+      - name: Print install instructions
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          echo ""
+          echo "========================================="
+          echo "  linux-arm64 binary released!"
+          echo "  Tag: $TAG"
+          echo ""
+          echo "  Install on your machine:"
+          echo "  curl -fsSL https://github.com/${{ github.repository }}/raw/$TAG/install.sh | bash"
+          echo "========================================="

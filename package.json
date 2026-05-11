@@ -26,6 +26,7 @@
     "build:node-require-shim": "bun run script/patch-node-require-shim.ts",
     "build:all": "bun run build && bun run build:binaries",
     "build:binaries": "bun run script/build-binaries.ts",
+    "build:linux-arm64": "mkdir -p packages/linux-arm64/bin && bun build src/cli/index.ts --compile --minify --target=bun-linux-arm64 --outfile=packages/linux-arm64/bin/oh-my-opencode",
     "build:schema": "bun run script/build-schema.ts",
     "build:model-capabilities": "bun run script/build-model-capabilities.ts",
     "clean": "rm -rf dist",
