@@ -47,6 +47,70 @@ Operational notes:
 - Claude Code plugin discovery load timeout is 10 seconds.
 - Runtime logger path: `/tmp/oh-my-opencode.log`
 
+## Install from Fork (Linux ARM64, no npmjs)
+
+If you have forked this repository and want to use your fork locally on a **Linux ARM64** machine without publishing to npmjs, use the `install.sh` script included in the repo.
+
+### Prerequisites
+
+- Linux ARM64 machine (e.g. Raspberry Pi 4/5, AWS Graviton, Apple M-series in Linux VM)
+- [Bun](https://bun.sh) installed: `curl -fsSL https://bun.sh/install | bash`
+
+### Step 1: Clone your fork
+
+```bash
+git clone https://github.com/<your-username>/oh-my-openagent.git
+cd oh-my-openagent
+```
+
+### Step 2: Build and install from source
+
+```bash
+./install.sh --from-source
+```
+
+This will:
+1. Run `bun install` to fetch dependencies
+2. Compile a self-contained `oh-my-opencode` binary for `linux-arm64`
+3. Copy it to `~/.local/bin/oh-my-opencode`
+
+### Step 3: Add to PATH (if needed)
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
+```
+
+For zsh:
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
+```
+
+### Step 4: Verify
+
+```bash
+oh-my-opencode --version
+```
+
+### Optional: Custom install directory
+
+```bash
+./install.sh --from-source --install-dir /usr/local/bin
+```
+
+### Releasing binaries via GitHub Actions (optional)
+
+If you want to share your fork's binary via GitHub Releases, push a version tag to trigger the `release-binary` workflow:
+
+```bash
+git tag v4.0.0-myfork
+git push origin v4.0.0-myfork
+```
+
+Or trigger it manually from **Actions → release-binary → Run workflow** in your fork's GitHub UI.
+
+---
+
 ## For LLM Agents
 
 > **IMPORTANT: Use `curl` to fetch this file, NOT WebFetch.** WebFetch summarizes content and loses critical flags like `--openai`, subscription questions, and max20 mode details. Always use:
